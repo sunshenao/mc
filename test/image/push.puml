@@ -1,0 +1,33 @@
+@startuml
+actor User
+participant TransferEngine
+participant MultiTransport
+participant RdmaTransport
+
+User -> TransferEngine: submitTransfer()
+TransferEngine -> MultiTransport: submitTransfer()
+MultiTransport -> RdmaTransport: submitTransfer()
+RdmaTransport --> MultiTransport: return status
+MultiTransport --> TransferEngine: return status
+TransferEngine --> User: return status
+@enduml
+
+@startuml
+participant prefill
+participant decode
+participant localCache as "prefill本地缓存"
+
+prefill -> localCache: 缓存KVCache等数据
+note right: prefill等待decode请求
+
+decode -> prefill: 请求所需缓存数据
+prefill -> prefill: 激活传输流程
+prefill -> localCache: 查找所需数据
+localCache --> prefill: 返回数据
+prefill -> decode: 依次发送数据块
+loop 直到数据发送完毕
+    prefill -> localCache: 删除已发送数据
+end
+decode -> decode: 依次接收数据
+note right: decode完成本次数据接收
+@enduml

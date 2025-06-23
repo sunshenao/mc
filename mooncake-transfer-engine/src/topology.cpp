@@ -49,6 +49,7 @@ namespace mooncake {
 struct InfinibandDevice {
     std::string name;         // 设备名称
     std::string pci_bus_id;   // PCI总线ID
+//    这里的“PCI总线ID”指的是该InfiniBand网卡在主机PCI总线上的唯一标识符。它通常表示为域:总线:设备.功能（如0000:3b:00.0）
     int numa_node;           // NUMA节点编号
 };
 

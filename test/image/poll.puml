@@ -1,0 +1,17 @@
+@startuml
+participant prefill
+participant decode
+participant localCache as "decode本地缓存"
+
+prefill -> decode: 发送KVCache等缓存数据
+note right: prefill计算完成后立即发送
+prefill -> prefill: 删除本地已发送缓存
+
+decode -> localCache: 存储接收到的数据
+note right: decode在本地缓存查找数据
+alt 本地缓存有数据
+    decode -> decode: 直接使用数据
+else 本地缓存无数据
+    decode -> decode: 等待数据到来
+end
+@enduml

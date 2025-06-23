@@ -1,0 +1,111 @@
+@startuml MooncakeTransferEngine
+
+' 核心类
+class TransferEngine {
+    -metadata_: TransferMetadata*
+    -multi_transports_: MultiTransport*
+    -local_topology_: Topology*
+    +init()
+    +registerLocalMemory()
+    +submitTransfer()
+    +getTransferStatus()
+}
+
+class MultiTransport {
+    -metadata_: TransferMetadata*
+    -transports_: map<string, Transport*>
+    +submitTransfer()
+    +getTransferStatus()
+}
+
+class TransferMetadata {
+    -storage_plugin_: MetadataStoragePlugin*
+    -handshake_plugin_: HandShakePlugin*
+    +addRpcMetaEntry()
+    +updateLocalSegmentDesc()
+}
+
+class Topology {
+    -matrix_: TopologyMatrix
+    -hca_list_: vector<string>
+    +start()
+    +discover()
+    +selectDevice()
+}
+
+' 传输协议类
+abstract class Transport {
+    #metadata_: TransferMetadata*
+    +{abstract} submitTransfer()
+    +{abstract} getTransferStatus()
+}
+
+class RdmaTransport {
+    -ctx_list_: vector<RdmaContext*>
+    -worker_pool_list_: vector<WorkerPool*>
+    -endpoint_store_: EndpointStore*
+}
+
+class TcpTransport {
+    -context_: TcpContext*
+    -endpoints_: map<string, TcpEndPoint*>
+}
+
+class CxlTransport {
+    -context_: CxlContext*
+    -endpoints_: map<string, CxlEndPoint*>
+}
+
+class NVMeoFTransport {
+    -desc_pool_: CUFileDescPool*
+}
+
+' 支持类
+class RdmaContext {
+    -pd_: ibv_pd*
+    -cq_list_: vector<ibv_cq*>
+    -worker_pool_: WorkerPool*
+    +registerMemory()
+    +submitPostSend()
+}
+
+class RdmaEndPoint {
+    -context_: RdmaContext*
+    -qp_list_: vector<ibv_qp*>
+    +setupConnectionsByActive()
+    +setupConnectionsByPassive()
+}
+
+class WorkerPool {
+    -context_: RdmaContext*
+    -worker_thread_: vector<thread>
+    +submitPostSend()
+    -performPollCq()
+}
+
+class EndpointStore {
+    +getEndpoint()
+    +insertEndpoint()
+    +deleteEndpoint()
+}
+
+' 关系定义
+TransferEngine --> MultiTransport
+TransferEngine --> TransferMetadata
+TransferEngine --> Topology
+
+MultiTransport --> Transport
+
+Transport <|-- RdmaTransport
+Transport <|-- TcpTransport
+Transport <|-- CxlTransport
+Transport <|-- NVMeoFTransport
+
+RdmaTransport --> RdmaContext
+RdmaTransport --> WorkerPool
+RdmaTransport --> EndpointStore
+
+RdmaContext --> RdmaEndPoint
+RdmaContext --> WorkerPool
+
+@enduml
